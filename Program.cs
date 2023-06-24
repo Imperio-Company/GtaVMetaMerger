@@ -1,14 +1,15 @@
 ﻿using Microsoft.Extensions.FileSystemGlobbing;
 using System.Xml;
-
+#pragma warning disable CS8600,CS8602,CS8603,CS8604 
 namespace PedsMetaMerger
 {
     internal class Program
     {
-        static XmlWriterSettings settings = new XmlWriterSettings
+        static readonly XmlWriterSettings settings = new()
         {
             Indent = true
         };
+
         static void Main(string[] args)
         {
             Boolean continuar = true;
@@ -131,9 +132,10 @@ namespace PedsMetaMerger
                             Console.WriteLine("5. Merge pedpersonality.meta");
                             Console.WriteLine("6. Merge pickups.meta");
                             Console.WriteLine("7. Merge ptfxassetinfo.meta");
-                            Console.WriteLine("8. Merge stream");
-                            Console.WriteLine("9. Merge todo");
-                            Console.WriteLine("10. Extraer weapon names");
+                            Console.WriteLine("8. Merge loadouts.meta");
+                            Console.WriteLine("9. Merge stream");
+                            Console.WriteLine("10. Merge todo");
+                            Console.WriteLine("11. Extraer weapon names");
                             Console.WriteLine("0. Atras");
                             switch (Console.ReadLine())
                             {
@@ -159,9 +161,12 @@ namespace PedsMetaMerger
                                     MergePtfxAssetInfo();
                                     break;
                                 case "8":
-                                    MergeWeaponStream();
+                                    MergeLoadOuts();
                                     break;
                                 case "9":
+                                    MergeWeaponStream();
+                                    break;
+                                case "10":
                                     MergeWeapons();
                                     MergeWeaponAnimations();
                                     MergeWeaponArchetypes();
@@ -169,9 +174,10 @@ namespace PedsMetaMerger
                                     MergePedPersonality();
                                     MergePickups();
                                     MergePtfxAssetInfo();
+                                    MergeLoadOuts();
                                     MergeWeaponStream();
                                     break;
-                                case "10":
+                                case "11":
                                     ExtractWeaponNames();
                                     break;
                                 case "0":
@@ -193,11 +199,38 @@ namespace PedsMetaMerger
             } while (continuar);
         }
 
+        private static void MergeLoadOuts()
+        {
+            XmlDocument nuevo = new();
+            XmlNode CPedInventoryLoadOutManager = nuevo.CreateElement("CPedInventoryLoadOutManager");
+            XmlNode LoadOuts = nuevo.CreateElement("LoadOuts");
+            XmlWriter writer = XmlWriter.Create("output/weapons/ptfxassetinfo.meta", settings);
+            Matcher matcher = new Matcher().AddInclude("**/ptfxassetinfo.meta");
+            String ruta = PedirRuta();
+
+            CPedInventoryLoadOutManager.AppendChild(LoadOuts);
+
+            foreach (string file in matcher.GetResultsInFullPath(ruta))
+            {
+                XmlDocument xmlDocument = new();
+                xmlDocument.Load(file);
+                XmlNodeList nodes = xmlDocument.SelectNodes("/CPtFxAssetInfoMgr/ptfxAssetDependencyInfos/Item");
+
+                for (int i = 0; i < nodes.Count; i++)
+                {
+                    XmlNode node = LoadOuts.OwnerDocument.ImportNode(nodes[i], true);
+                    LoadOuts.AppendChild(node);
+                }
+            }
+            CPedInventoryLoadOutManager.WriteTo(writer);
+            writer.Close();
+        }
+
         private static void ExtractWeaponNames()
         {
             if (!File.Exists("output/weapons/weapons.meta"))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load("output/weapons/weapons.meta");
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CWeaponInfoBlob/Infos/Item/Infos/Item[type=\"CWeaponInfo\"]");
                 StreamWriter salida = File.CreateText("output/weapons/WeaponNames.txt");
@@ -213,7 +246,7 @@ namespace PedsMetaMerger
 
         private static void MergePtfxAssetInfo()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode CPtFxAssetInfoMgr = nuevo.CreateElement("CPtFxAssetInfoMgr");
             XmlNode ptfxAssetDependencyInfos = nuevo.CreateElement("ptfxAssetDependencyInfos");
             XmlWriter writer = XmlWriter.Create("output/weapons/ptfxassetinfo.meta", settings);
@@ -224,7 +257,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CPtFxAssetInfoMgr/ptfxAssetDependencyInfos/Item");
 
@@ -240,7 +273,7 @@ namespace PedsMetaMerger
 
         private static void MergePickups()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode CPickupDataManager = nuevo.CreateElement("CPickupDataManager");
             XmlNode pickupData = nuevo.CreateElement("pickupData");
             XmlNode actionData = nuevo.CreateElement("actionData");
@@ -255,7 +288,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CPickupDataManager/pickupData/Item");
 
@@ -305,7 +338,7 @@ namespace PedsMetaMerger
 
         private static void MergePedPersonality()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode CPedModelInfo__PersonalityDataList = nuevo.CreateElement("CPedModelInfo__PersonalityDataList");
             //MovementModeUnholsterData
             XmlNode MovementModeUnholsterData = nuevo.CreateElement("MovementModeUnholsterData");
@@ -728,7 +761,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CPedModelInfo__PersonalityDataList/MovementModeUnholsterData/Item[Name=\"UNHOLSTER_UNARMED\"]/UnholsterClips/Item[Clip=\"unarmed_holster_unarmed\"]/Weapons/Item");
                 
@@ -1173,7 +1206,7 @@ namespace PedsMetaMerger
 
         private static void MergeWeaponComponents()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode CWeaponComponentInfoBlob = nuevo.CreateElement("CWeaponComponentInfoBlob");
             XmlNode Infos = nuevo.CreateElement("Infos");
             XmlWriter writer = XmlWriter.Create("output/weapons/weaponcomponents.meta", settings);
@@ -1184,7 +1217,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CWeaponComponentInfoBlob/Infos/Item");
 
@@ -1200,7 +1233,7 @@ namespace PedsMetaMerger
 
         private static void MergeWeaponArchetypes()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode InitDataList = nuevo.CreateElement("CWeaponModelInfo__InitDataList");
             XmlNode InitDatas = nuevo.CreateElement("InitDatas");
             XmlWriter writer = XmlWriter.Create("output/weapons/weaponarchetypes.meta", settings);
@@ -1211,7 +1244,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CWeaponModelInfo__InitDataList/InitDatas/Item");
 
@@ -1227,7 +1260,7 @@ namespace PedsMetaMerger
 
         private static void MergeWeaponAnimations()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode CWeaponAnimationsSets = nuevo.CreateElement("CWeaponAnimationsSets");
             XmlNode WeaponAnimationsSets = nuevo.CreateElement("WeaponAnimationsSets");
             XmlElement ItemBallistic = nuevo.CreateElement("Item");
@@ -1280,7 +1313,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CWeaponAnimationsSets/WeaponAnimationsSets/Item[key=\"Ballistic\"]/WeaponAnimations/Item");
 
@@ -1344,7 +1377,7 @@ namespace PedsMetaMerger
 
         private static void MergeWeapons()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode CWeaponInfoBlob = nuevo.CreateElement("CWeaponInfoBlob");
             XmlNode SlotNavigateOrder = nuevo.CreateElement("SlotNavigateOrder");
             XmlNode SlotBestOrder = nuevo.CreateElement("SlotBestOrder");
@@ -1391,7 +1424,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CWeaponInfoBlob/SlotNavigateOrder/Item");
 
@@ -1535,7 +1568,7 @@ namespace PedsMetaMerger
         {
             if (!File.Exists("output/vehicles/vehicles.meta"))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load("output/vehicles/vehicles.meta");
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CVehicleModelInfo__InitDataList/InitDatas/Item");
                 StreamWriter salida = File.CreateText("output/vehicles/VehicleNames.txt");
@@ -1551,7 +1584,7 @@ namespace PedsMetaMerger
 
         private static void MergeVehicleLayouts()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode CVehicleMetadataMgr = nuevo.CreateElement("CVehicleMetadataMgr");
             XmlNode AnimRateSets = nuevo.CreateElement("AnimRateSets");
             XmlNode ClipSetMaps = nuevo.CreateElement("ClipSetMaps");
@@ -1600,7 +1633,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CVehicleMetadataMgr/AnimRateSets/Item");
 
@@ -1768,7 +1801,7 @@ namespace PedsMetaMerger
 
         private static void MergeHandling()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode CHandlingDataMgr = nuevo.CreateElement("CHandlingDataMgr");
             XmlNode HandlingData = nuevo.CreateElement("HandlingData");
             XmlWriter writer = XmlWriter.Create("output/vehicles/handling.meta", settings);
@@ -1779,7 +1812,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CHandlingDataMgr/HandlingData/Item");
 
@@ -1795,7 +1828,7 @@ namespace PedsMetaMerger
 
         private static void MergeCarvariations()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode CVehicleModelInfoVariation = nuevo.CreateElement("CVehicleModelInfoVariation");
             XmlNode variationData = nuevo.CreateElement("variationData");
             XmlWriter writer = XmlWriter.Create("output/vehicles/carvariations.meta", settings);
@@ -1806,7 +1839,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CVehicleModelInfoVariation/variationData/Item");
 
@@ -1822,7 +1855,7 @@ namespace PedsMetaMerger
 
         private static void MergeCarcols()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode CVehicleModelInfoVarGlobal = nuevo.CreateElement("CVehicleModelInfoVarGlobal");
             XmlNode Kits = nuevo.CreateElement("Kits");
             XmlNode Lights = nuevo.CreateElement("Lights");
@@ -1837,7 +1870,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CVehicleModelInfoVarGlobal/Kits/Item");
 
@@ -1871,7 +1904,7 @@ namespace PedsMetaMerger
         {
             if (!File.Exists("output/peds/peds.meta"))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load("output/peds/peds.meta");
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CPedModelInfo__InitDataList/InitDatas/Item");
                 StreamWriter salida = File.CreateText("output/peds/PedsNames.txt");
@@ -1887,7 +1920,7 @@ namespace PedsMetaMerger
 
         private static void MergeVehicles()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode InitDataList = nuevo.CreateElement("CVehicleModelInfo__InitDataList");
             XmlNode InitDatas = nuevo.CreateElement("InitDatas");
             XmlNode txdRelationships = nuevo.CreateElement("txdRelationships");
@@ -1900,7 +1933,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CVehicleModelInfo__InitDataList/InitDatas/Item");
 
@@ -1924,7 +1957,7 @@ namespace PedsMetaMerger
 
         private static void MergePeds()
         {
-            XmlDocument nuevo = new XmlDocument();
+            XmlDocument nuevo = new();
             XmlNode InitDataList = nuevo.CreateElement("CPedModelInfo__InitDataList");
             XmlNode InitDatas = nuevo.CreateElement("InitDatas");
             XmlWriter writer = XmlWriter.Create("output/peds/peds.meta", settings);
@@ -1935,7 +1968,7 @@ namespace PedsMetaMerger
 
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
-                XmlDocument xmlDocument = new XmlDocument();
+                XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
                 XmlNodeList nodes = xmlDocument.SelectNodes("/CPedModelInfo__InitDataList/InitDatas/Item");
 
