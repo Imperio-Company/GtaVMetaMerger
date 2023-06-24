@@ -204,8 +204,8 @@ namespace PedsMetaMerger
             XmlDocument nuevo = new();
             XmlNode CPedInventoryLoadOutManager = nuevo.CreateElement("CPedInventoryLoadOutManager");
             XmlNode LoadOuts = nuevo.CreateElement("LoadOuts");
-            XmlWriter writer = XmlWriter.Create("output/weapons/ptfxassetinfo.meta", settings);
-            Matcher matcher = new Matcher().AddInclude("**/ptfxassetinfo.meta");
+            XmlWriter writer = XmlWriter.Create("output/weapons/loadouts.meta", settings);
+            Matcher matcher = new Matcher().AddInclude("**/loadouts.meta");
             String ruta = PedirRuta();
 
             CPedInventoryLoadOutManager.AppendChild(LoadOuts);
@@ -214,7 +214,7 @@ namespace PedsMetaMerger
             {
                 XmlDocument xmlDocument = new();
                 xmlDocument.Load(file);
-                XmlNodeList nodes = xmlDocument.SelectNodes("/CPtFxAssetInfoMgr/ptfxAssetDependencyInfos/Item");
+                XmlNodeList nodes = xmlDocument.SelectNodes("/CPedInventoryLoadOutManager/LoadOuts/Item");
 
                 for (int i = 0; i < nodes.Count; i++)
                 {
