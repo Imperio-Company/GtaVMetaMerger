@@ -11,4 +11,5 @@ Extract the zip file from the releases section, when you run the `GtaVMetaMerger
 Select the category with which you want to work and within it the section to work, the path where are the individual resources to unify and proceed to make the union of the same generating the unified file within the output folder in the corresponding category.
 
 # Disclaimer
-At the moment the tool does not validate that the source files are correctly formed.
+At the moment the tool only validate that the source files are correctly formed xml files, does not recognize if they comply with the shape of the specific file type of gta.
+When merging stream files, if a file with the same name already exists in the destination path, it overwrites it and notifies it.
