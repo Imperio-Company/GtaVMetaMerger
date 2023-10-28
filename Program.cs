@@ -22,14 +22,50 @@ namespace PedsMetaMerger
                 Directory.CreateDirectory("output/vehicles");
             }
 
+            if (!File.Exists("output/vehicles/fxmanifest.lua"))
+            {
+                StreamWriter writer = File.CreateText("output/vehicles/fxmanifest.lua");
+                writer.WriteLine("fx_version 'bodacious'");
+                writer.WriteLine("game 'gta5'");
+                writer.WriteLine();
+                writer.WriteLine("files {\r\n    'vehicles.meta',\r\n    'carvariations.meta',\r\n    'carcols.meta',\r\n    'handling.meta',\r\n    'vehiclelayouts.meta',\r\n}");
+                writer.WriteLine();
+                writer.WriteLine("data_file 'HANDLING_FILE' 'handling.meta'\r\ndata_file 'VEHICLE_METADATA_FILE' 'vehicles.meta'\r\ndata_file 'CARCOLS_FILE' 'carcols.meta'\r\ndata_file 'VEHICLE_VARIATION_FILE' 'carvariations.meta'\r\ndata_file 'VEHICLE_LAYOUTS_FILE' 'vehiclelayouts.meta'");
+                writer.Close();
+            }
+
             if (!Directory.Exists("output/peds"))
             {
                 Directory.CreateDirectory("output/peds");
             }
 
+            if (!File.Exists("output/peds/fxmanifest.lua"))
+            {
+                StreamWriter writer = File.CreateText("output/peds/fxmanifest.lua");
+                writer.WriteLine("fx_version 'bodacious'");
+                writer.WriteLine("game 'gta5'");
+                writer.WriteLine();
+                writer.WriteLine("files {\r\n    'peds.meta'\r\n}");
+                writer.WriteLine();
+                writer.WriteLine("data_file 'PED_METADATA_FILE' 'peds.meta'");
+                writer.Close();
+            }
+
             if (!Directory.Exists("output/weapons"))
             {
                 Directory.CreateDirectory("output/weapons");
+            }
+
+            if (!File.Exists("output/weapons/fxmanifest.lua"))
+            {
+                StreamWriter writer = File.CreateText("output/weapons/fxmanifest.lua");
+                writer.WriteLine("fx_version 'bodacious'");
+                writer.WriteLine("game 'gta5'");
+                writer.WriteLine();
+                writer.WriteLine("files {\r\n\t'weaponcomponents.meta',\r\n\t'pedpersonality.meta',\r\n\t'weaponanimations.meta',\r\n\t'weaponarchetypes.meta',\r\n\t'weapons.meta',\r\n\t'pickups.meta',\r\n\t'ptfxassetinfo.meta',\r\n\t'loadouts.meta',\r\n}");
+                writer.WriteLine();
+                writer.WriteLine("data_file 'WEAPONCOMPONENTSINFO_FILE' 'weaponcomponents.meta'\r\ndata_file 'PED_PERSONALITY_FILE' 'pedpersonality.meta'\r\ndata_file 'WEAPON_ANIMATIONS_FILE' 'weaponanimations.meta'\r\ndata_file 'WEAPON_METADATA_FILE' 'weaponarchetypes.meta'\r\ndata_file 'WEAPONINFO_FILE' 'weapons.meta\r\ndata_file 'DLC_WEAPON_PICKUPS' 'pickups.meta'\r\ndata_file 'PTFXASSETINFO_FILE' 'ptfxassetinfo.meta\r\ndata_file 'LOADOUTS_FILE' 'loadouts.meta");
+                writer.Close();
             }
 
             do
@@ -85,9 +121,11 @@ namespace PedsMetaMerger
                             Console.WriteLine("3. Merge carvariations.meta");
                             Console.WriteLine("4. Merge handling.meta");
                             Console.WriteLine("5. Merge vehiclelayouts.meta");
-                            Console.WriteLine("6. Merge stream");
-                            Console.WriteLine("7. Merge Alls");
-                            Console.WriteLine("8. Extract vehicle names");
+                            Console.WriteLine("6. Merge shop_vehicle.meta");
+                            Console.WriteLine("7. Merge vehiclecontentunlocks.meta");
+                            Console.WriteLine("8. Merge stream");
+                            Console.WriteLine("9. Merge Alls");
+                            Console.WriteLine("10. Extract vehicle names");
                             Console.WriteLine("0. Back");
                             switch (Console.ReadLine())
                             {
@@ -113,18 +151,28 @@ namespace PedsMetaMerger
                                     break;
                                 case "6":
                                     ruta = PedirRuta();
-                                    MergeStream(ruta, "vehicles");
+                                    MergeShopVehicle(ruta);
                                     break;
                                 case "7":
+                                    ruta = PedirRuta();
+                                    MergeContentUnlocks(ruta);
+                                    break;
+                                case "8":
+                                    ruta = PedirRuta();
+                                    MergeStream(ruta, "vehicles");
+                                    break;
+                                case "9":
                                     ruta = PedirRuta();
                                     MergeVehicles(ruta);
                                     MergeCarcols(ruta);
                                     MergeCarvariations(ruta);
                                     MergeHandling(ruta);
                                     MergeVehicleLayouts(ruta);
+                                    MergeShopVehicle(ruta);
+                                    MergeContentUnlocks(ruta);
                                     MergeStream(ruta, "vehicles");
                                     break;
-                                case "8":
+                                case "10":
                                     ExtractVehicleNames();
                                     break;
                                 case "0":
@@ -222,6 +270,100 @@ namespace PedsMetaMerger
                         break;
                 }
             } while (continuar);
+        }
+
+        private static void MergeContentUnlocks(string ruta)
+        {
+            Console.WriteLine("Begin vehiclecontentunlocks.meta merge");
+            bool ok = true;
+            XmlDocument nuevo = new();
+            XmlNode SContentUnlocks = nuevo.CreateElement("SContentUnlocks");
+            XmlNode listOfUnlocks = nuevo.CreateElement("listOfUnlocks");
+            XmlWriter writer = XmlWriter.Create("output/vehicles/vehiclecontentunlocks.meta", settings);
+            Matcher matcher = new Matcher().AddInclude("**/*contentunlocks.meta");
+
+            SContentUnlocks.AppendChild(listOfUnlocks);
+
+            foreach (string file in matcher.GetResultsInFullPath(ruta))
+            {
+                XmlDocument xmlDocument = new();
+                try
+                {
+                    xmlDocument.Load(file);
+                    XmlNodeList nodes = xmlDocument.SelectNodes("/SContentUnlocks/listOfUnlocks/Item");
+
+                    for (int i = 0; i < nodes.Count; i++)
+                    {
+                        XmlNode node = listOfUnlocks.OwnerDocument.ImportNode(nodes[i], true);
+                        listOfUnlocks.AppendChild(node);
+                    }
+                }
+                catch (XmlException ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Error in the file " + file);
+                    Console.WriteLine(ex.Message);
+                    Console.ResetColor();
+                    ok = false;
+                    break;
+                }
+            }
+            SContentUnlocks.WriteTo(writer);
+            writer.Close();
+
+            if (ok)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("vehiclecontentunlocks.meta merged");
+                Console.ResetColor();
+            }
+        }
+
+        private static void MergeShopVehicle(string ruta)
+        {
+            Console.WriteLine("Begin shop_vehicle.meta merge");
+            bool ok = true;
+            XmlDocument nuevo = new();
+            XmlNode ShopVehicleDataArray = nuevo.CreateElement("ShopVehicleDataArray");
+            XmlNode VehicleMods = nuevo.CreateElement("VehicleMods");
+            XmlWriter writer = XmlWriter.Create("output/vehicles/shop_vehicle.meta", settings);
+            Matcher matcher = new Matcher().AddInclude("**/shop_vehicle.meta");
+
+            ShopVehicleDataArray.AppendChild(VehicleMods);
+
+            foreach (string file in matcher.GetResultsInFullPath(ruta))
+            {
+                XmlDocument xmlDocument = new();
+                try
+                {
+                    xmlDocument.Load(file);
+                    XmlNodeList nodes = xmlDocument.SelectNodes("/ShopVehicleDataArray/VehicleMods/Item");
+
+                    for (int i = 0; i < nodes.Count; i++)
+                    {
+                        XmlNode node = VehicleMods.OwnerDocument.ImportNode(nodes[i], true);
+                        VehicleMods.AppendChild(node);
+                    }
+                }
+                catch (XmlException ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Error in the file " + file);
+                    Console.WriteLine(ex.Message);
+                    Console.ResetColor();
+                    ok = false;
+                    break;
+                }
+            }
+            ShopVehicleDataArray.WriteTo(writer);
+            writer.Close();
+
+            if (ok)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("shop_vehicles.meta merged");
+                Console.ResetColor();
+            }
         }
 
         private static void MergeLoadOuts(string ruta)
@@ -2051,7 +2193,8 @@ namespace PedsMetaMerger
             foreach (string file in matcher.GetResultsInFullPath(ruta))
             {
                 XmlDocument xmlDocument = new();
-                try {
+                try
+                {
                     xmlDocument.Load(file);
                     XmlNodeList nodes = xmlDocument.SelectNodes("/CVehicleModelInfoVariation/variationData/Item");
 
@@ -2102,7 +2245,8 @@ namespace PedsMetaMerger
             {
                 XmlDocument xmlDocument = new();
 
-                try {
+                try
+                {
                     xmlDocument.Load(file);
                     XmlNodeList nodes = xmlDocument.SelectNodes("/CVehicleModelInfoVarGlobal/Kits/Item");
 
@@ -2185,11 +2329,16 @@ namespace PedsMetaMerger
 
             XmlDocument nuevo = new();
             XmlNode InitDataList = nuevo.CreateElement("CVehicleModelInfo__InitDataList");
+            XmlNode residentTxd = nuevo.CreateElement("residentTxd");
+            XmlNode residentAnims = nuevo.CreateElement("residentAnims");
             XmlNode InitDatas = nuevo.CreateElement("InitDatas");
             XmlNode txdRelationships = nuevo.CreateElement("txdRelationships");
             XmlWriter writer = XmlWriter.Create("output/vehicles/vehicles.meta", settings);
             Matcher matcher = new Matcher().AddInclude("**/vehicles.meta");
 
+            residentTxd.AppendChild(nuevo.CreateTextNode("vehshare"));
+            InitDataList.AppendChild(residentTxd);
+            InitDataList.AppendChild(residentAnims);
             InitDataList.AppendChild(InitDatas);
             InitDataList.AppendChild(txdRelationships);
 
@@ -2197,7 +2346,8 @@ namespace PedsMetaMerger
             {
                 XmlDocument xmlDocument = new();
 
-                try {
+                try
+                {
                     xmlDocument.Load(file);
                     XmlNodeList nodes = xmlDocument.SelectNodes("/CVehicleModelInfo__InitDataList/InitDatas/Item");
 
@@ -2253,7 +2403,8 @@ namespace PedsMetaMerger
             {
                 XmlDocument xmlDocument = new();
 
-                try {
+                try
+                {
                     xmlDocument.Load(file);
                     XmlNodeList nodes = xmlDocument.SelectNodes("/CPedModelInfo__InitDataList/InitDatas/Item");
 

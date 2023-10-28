@@ -7,6 +7,7 @@ Based in the work of [mmleczek](https://github.com/mmleczek) in his resource [mm
 Click [here](https://github.com/Imperio-Company/GtaVMetaMerger/releases/latest) to go to the releases page and download it.
 
 # Usage
+You need [.net runtime 6.0](https://dotnet.microsoft.com/es-es/download/dotnet/6.0) or higher to run or compile this program
 Extract the zip file from the releases section, when you run the `GtaVMetaMerger.exe` file the `output` folder will be created with the output folders of each category.
 Select the category with which you want to work and within it the section to work, the path where are the individual resources to unify and proceed to make the union of the same generating the unified file within the output folder in the corresponding category.
 
